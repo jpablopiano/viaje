@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Oeste USA — 15 Días</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -149,7 +149,7 @@
 </nav>
 
 <div class="hero">
-  <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80" alt="Yosemite National Park"/>
+  <img src="img/index-yosemite.svg" alt="Yosemite National Park"/>
   <div class="hero-overlay"></div>
   <div class="hero-content">
     <span class="hero-eyebrow">Itinerario completo</span>
@@ -170,8 +170,8 @@
     <div class="route-stop"><span class="rs-days">Día 2</span><span class="rs-city">Big Sur</span></div>
     <div class="route-stop"><span class="rs-days">Días 3–9</span><span class="rs-city">San Francisco</span></div>
     <div class="route-stop"><span class="rs-days">Días 10–11</span><span class="rs-city">Yosemite</span></div>
-    <div class="route-stop"><span class="rs-days">Días 12–13</span><span class="rs-city">Las Vegas</span></div>
-    <div class="route-stop"><span class="rs-days">Día 14</span><span class="rs-city">Grand Canyon</span></div>
+    <div class="route-stop"><span class="rs-days">Días 12–14</span><span class="rs-city">Las Vegas</span></div>
+    <div class="route-stop"><span class="rs-days">Día 13</span><span class="rs-city">Grand Canyon</span></div>
     <div class="route-stop"><span class="rs-days">Día 15</span><span class="rs-city">LAX</span></div>
   </div>
 
@@ -200,8 +200,8 @@
           <span class="tag">Venice Beach</span>
         </div>
         <div class="photos two">
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=800&q=80" alt="Los Angeles skyline" loading="lazy"/></div>
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1580655653885-65763b2597d0?w=800&q=80" alt="Hollywood Sign" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/la-skyline.svg" alt="Los Angeles skyline" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/la-hollywood.svg" alt="Hollywood Sign" loading="lazy"/></div>
         </div>
       </div>
     </div>
@@ -223,7 +223,7 @@
           <span class="tag">Acantilados del Pacífico</span>
         </div>
         <div class="photos one">
-          <div class="photo-item" style="aspect-ratio:21/9"><img src="https://images.unsplash.com/photo-1549880338-65ddcdfd017b?w=1200&q=80" alt="Big Sur Pacific Coast Highway" loading="lazy"/></div>
+          <div class="photo-item" style="aspect-ratio:21/9"><img src="img/bigsur-pch.svg" alt="Big Sur Pacific Coast Highway" loading="lazy"/></div>
         </div>
       </div>
     </div>
@@ -252,9 +252,9 @@
           <div class="tip-box" style="border-left-color:#2D5FA0"><strong>Día 7 — Silicon Valley:</strong> Apple Park, Computer History Museum, Googleplex. Cena en Palo Alto.</div>
         </div>
         <div class="photos three">
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=800&q=80" alt="Golden Gate San Francisco" loading="lazy"/></div>
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1474552226712-ac0f0961a954?w=600&q=80" alt="San Francisco" loading="lazy"/></div>
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=600&q=80" alt="Napa Valley" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/sf-goldengate.svg" alt="Golden Gate San Francisco" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/sf-ciudad.svg" alt="San Francisco" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/sf-napa.svg" alt="Napa Valley" loading="lazy"/></div>
         </div>
       </div>
     </div>
@@ -277,9 +277,9 @@
           <span class="tag">Bridalveil Fall</span>
         </div>
         <div class="photos three">
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1562310503-a918c4c61e38?w=800&q=80" alt="Yosemite Valley" loading="lazy"/></div>
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=80" alt="Yosemite Half Dome" loading="lazy"/></div>
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=600&q=80" alt="Yosemite Falls" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/yosemite-valley.svg" alt="Yosemite Valley" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/yosemite-halfdome.svg" alt="Yosemite Half Dome" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/yosemite-falls.svg" alt="Yosemite Falls" loading="lazy"/></div>
         </div>
         <div class="tip-box"><strong>La ruta US-395</strong> entre Yosemite y Las Vegas es una de las grandes desconocidas: Sierra Nevada nevada a la izquierda, desierto de Mojave a la derecha. Vale el trayecto largo.</div>
       </div>
@@ -288,13 +288,13 @@
     <!-- Las Vegas -->
     <div class="stop-block">
       <div class="stop-meta">
-        <span class="stop-days-badge">Días 12–13</span>
+        <span class="stop-days-badge">Días 12–14</span>
         <div class="stop-num">05</div>
-        <div class="drive-note"><strong>Las Vegas → Grand Canyon</strong><br/>~4:30 h · US-93 → AZ-89</div>
+        <div class="drive-note"><strong>Día 13 — Excursión al Grand Canyon</strong><br/>~4:30 h ida · salir 6 AM · volver a LV de noche<br/><br/><strong>Día 15 — Las Vegas → LAX</strong><br/>~4:30 h · I-15 sur · tranquilo</div>
       </div>
       <div class="stop-body">
-        <div class="stop-city">Las Vegas <span class="stop-nights">2 noches</span></div>
-        <p class="stop-desc">La ciudad más irreal del mundo. El Strip de noche es un espectáculo en sí mismo aunque no juegues. Fremont Street tiene un ambiente más auténtico. Excursión al Red Rock Canyon a 30 min: roca naranja y silencio absoluto. Shows de primer nivel y gastronomía de chefs con estrella Michelin completan los dos días.</p>
+        <div class="stop-city">Las Vegas <span class="stop-nights">3 noches</span></div>
+        <p class="stop-desc">Tu base para los últimos días. El Strip de noche es un espectáculo en sí mismo aunque no juegues. Fremont Street tiene un ambiente más auténtico. El día 13 lo dedicás íntegramente a una excursión al Grand Canyon — salís a las 6 AM, llegás a media mañana con buena luz, y volvés a Las Vegas de noche. El día 15 hacés los 4:30 h a LAX tranquilo, sin apuro.</p>
         <div class="tags">
           <span class="tag">The Strip nocturno</span>
           <span class="tag">Fremont Street</span>
@@ -303,8 +303,8 @@
           <span class="tag">Gastronomía</span>
         </div>
         <div class="photos two">
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=800&q=80" alt="Las Vegas Strip" loading="lazy"/></div>
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=800&q=80" alt="Red Rock Canyon" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/lasvegas-strip.svg" alt="Las Vegas Strip" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/lasvegas-redrock.svg" alt="Red Rock Canyon" loading="lazy"/></div>
         </div>
       </div>
     </div>
@@ -312,26 +312,26 @@
     <!-- Grand Canyon -->
     <div class="stop-block">
       <div class="stop-meta">
-        <span class="stop-days-badge">Días 14–15</span>
+        <span class="stop-days-badge">Día 13</span>
         <div class="stop-num">06</div>
-        <div class="drive-note"><strong>Grand Canyon → LAX</strong><br/>~7 h · AZ-89 → I-40 → I-15 → I-10<br/>Salir ~8 AM · llegar LAX ~3 PM</div>
+        <div class="drive-note"><strong>Excursión desde Las Vegas</strong><br/>4:30 h ida · 4:30 h vuelta<br/>Salir 6 AM para aprovechar el día</div>
       </div>
       <div class="stop-body">
-        <div class="stop-city">Grand Canyon <span class="stop-nights">1 noche dentro del parque</span></div>
-        <p class="stop-desc">Llegás a media tarde del día 14 para el atardecer desde Mather Point — los cañones en naranja y rojo. Con 1 noche dentro del parque tenés el amanecer del día 15 con los colores en violeta y casi sin gente en los miradores. Bajás un tramo del Bright Angel Trail y salís con calma hacia LAX. Reservar el Bright Angel Lodge con 6 meses de anticipación.</p>
+        <div class="stop-city">Grand Canyon <span class="stop-nights">excursión de día</span></div>
+        <p class="stop-desc">Salís de Las Vegas a las 6 AM y llegás al South Rim a media mañana con la mejor luz del día. Tiempo para el Rim Trail entre miradores, bajar un tramo del Bright Angel Trail, y ver el cañón desde distintos ángulos antes de arrancar la vuelta. Sin la presión del amanecer pero con todo el día para absorber una de las maravillas más grandes del planeta. La entrada está cubierta por el America the Beautiful Pass.</p>
         <div class="tags">
-          <span class="tag">Atardecer Mather Point</span>
-          <span class="tag">Amanecer South Rim</span>
+          <span class="tag">South Rim</span>
           <span class="tag">Bright Angel Trail</span>
+          <span class="tag">Mather Point</span>
           <span class="tag">Rim Trail</span>
-          <span class="tag">Bright Angel Lodge</span>
+          <span class="tag">Excursión de día</span>
         </div>
         <div class="photos three">
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1615551043360-33de8b5f410c?w=800&q=80" alt="Grand Canyon South Rim" loading="lazy"/></div>
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=600&q=80" alt="Grand Canyon sunset" loading="lazy"/></div>
-          <div class="photo-item"><img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=600&q=80" alt="Grand Canyon trail" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/grandcanyon-rim.svg" alt="Grand Canyon South Rim" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/grandcanyon-sunset.svg" alt="Grand Canyon sunset" loading="lazy"/></div>
+          <div class="photo-item"><img src="img/grandcanyon-trail.svg" alt="Grand Canyon trail" loading="lazy"/></div>
         </div>
-        <div class="tip-box"><strong>Dormir dentro del parque marca la diferencia.</strong> El amanecer desde el South Rim sin la multitud de los tours de día es una experiencia completamente distinta. Reservá con meses de anticipación.</div>
+        <div class="tip-box"><strong>Salí a las 6 AM sí o sí.</strong> Eso te da ~5 horas en el parque antes de arrancar la vuelta a Las Vegas a las 2 PM, llegando de noche tranquilos. Si salís más tarde, el regreso se complica.</div>
       </div>
     </div>
 
@@ -345,7 +345,7 @@
   Oeste USA · 15 días · En pareja · Un auto · LAX → LAX
 </footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
   const map = L.map('map-usa', { zoomControl: true, scrollWheelZoom: false });
 
@@ -360,8 +360,8 @@
     { name: 'San Francisco', coords: [37.7749, -122.4194], days: 'Días 3–9', note: '7 noches · base de operaciones' },
     { name: 'Napa Valley', coords: [38.2975, -122.2869], days: 'Día 6', note: 'Excursión desde SF' },
     { name: 'Yosemite', coords: [37.8651, -119.5383], days: 'Días 10–11', note: '2 noches' },
-    { name: 'Las Vegas', coords: [36.1699, -115.1398], days: 'Días 12–13', note: '2 noches' },
-    { name: 'Grand Canyon', coords: [36.0544, -112.1401], days: 'Día 14', note: '1 noche dentro del parque' },
+    { name: 'Las Vegas', coords: [36.1699, -115.1398], days: 'Días 12–14', note: '3 noches · base para el Grand Canyon' },
+    { name: 'Grand Canyon', coords: [36.0544, -112.1401], days: 'Día 13', note: 'Excursión de día desde Las Vegas' },
   ];
 
   const mainRoute = [
@@ -370,7 +370,6 @@
     [37.7749, -122.4194],
     [37.8651, -119.5383],
     [36.1699, -115.1398],
-    [36.0544, -112.1401],
     [34.0522, -118.2437],
   ];
 
@@ -379,6 +378,11 @@
 
   // Napa excursion dashed
   L.polyline([[37.7749, -122.4194], [38.2975, -122.2869]], {
+    color: '#2D5FA0', weight: 1.5, opacity: 0.4, dashArray: '3, 5'
+  }).addTo(map);
+
+  // Grand Canyon day-trip excursion from Las Vegas (ida y vuelta)
+  L.polyline([[36.1699, -115.1398], [36.0544, -112.1401]], {
     color: '#2D5FA0', weight: 1.5, opacity: 0.4, dashArray: '3, 5'
   }).addTo(map);
 
@@ -401,7 +405,7 @@
   }
 
   stops.forEach((stop, i) => {
-    const isExcursion = stop.name === 'Napa Valley';
+    const isExcursion = stop.name === 'Napa Valley' || stop.name === 'Grand Canyon';
     L.marker(stop.coords, { icon: makeIcon(isExcursion ? '☆' : i + 1, isExcursion) })
       .addTo(map)
       .bindPopup(`
