@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Italia — 15 Días</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F5F0E8;
+    --ink: #1A1714;
+    --gold: #C9933A;
+    --rust: #B5451B;
+    --sage: #5C7A5C;
+    --dust: #8C7B6B;
+    --light: #EDE8DE;
+    --accent: #B5451B;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0;
+    background: rgba(245,240,232,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(26,23,20,0.1);
+    padding: 1rem 3rem;
+    display: flex; align-items: center; gap: 1.5rem;
+    z-index: 50;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--dust); text-decoration: none; font-weight: 500;
+    transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--ink); }
+  .nav-sep { color: var(--dust); opacity: 0.4; }
+  .nav-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--ink); }
+  .nav-days { margin-left: auto; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dust); }
+
+  /* HERO */
+  .hero {
+    height: 70vh; min-height: 480px; position: relative; overflow: hidden;
+  }
+  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(20,16,10,0.15) 0%, rgba(20,16,10,0.7) 100%);
+  }
+  .hero-content {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 3rem;
+    color: white;
+  }
+  .hero-eyebrow {
+    font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase;
+    opacity: 0.7; margin-bottom: 0.8rem; display: block;
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+  .hero-title em { font-style: italic; color: #E8C87A; }
+  .stats-row {
+    display: flex; gap: 2rem; flex-wrap: wrap;
+  }
+  .stat { text-align: left; }
+  .stat-val { font-size: 1.5rem; font-weight: 500; display: block; }
+  .stat-lbl { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.6; }
+
+  /* MAIN LAYOUT */
+  .main { max-width: 1200px; margin: 0 auto; padding: 4rem 3rem; }
+
+  /* ROUTE SUMMARY */
+  .route-bar {
+    display: flex; align-items: center; gap: 0; overflow-x: auto;
+    border: 1px solid rgba(26,23,20,0.12); border-radius: 4px;
+    background: white; margin-bottom: 4rem;
+    scrollbar-width: none;
+  }
+  .route-bar::-webkit-scrollbar { display: none; }
+  .route-stop {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 1rem 1.5rem; gap: 0.3rem; flex-shrink: 0;
+    position: relative; text-align: center;
+  }
+  .route-stop:not(:last-child)::after {
+    content: '→';
+    position: absolute; right: -0.6rem;
+    color: var(--dust); font-size: 0.8rem; top: 50%; transform: translateY(-50%);
+    z-index: 1;
+  }
+  .rs-days { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dust); }
+  .rs-city { font-family: 'Playfair Display', serif; font-size: 0.95rem; color: var(--ink); }
+
+  /* MAP */
+  .section-label {
+    font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--dust); margin-bottom: 1rem; display: block;
+  }
+  .map-container {
+    height: 450px; border-radius: 4px; overflow: hidden;
+    border: 1px solid rgba(26,23,20,0.12);
+    margin-bottom: 5rem;
+  }
+  #map-italia { height: 100%; width: 100%; }
+
+  /* ITINERARY */
+  .itinerary { display: flex; flex-direction: column; gap: 0; }
+
+  .stop-block {
+    display: grid; grid-template-columns: 120px 1fr;
+    border-top: 1px solid rgba(26,23,20,0.1);
+    padding: 3rem 0;
+    gap: 3rem;
+    position: relative;
+  }
+
+  .stop-meta { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.2rem; }
+  .stop-days-badge {
+    display: inline-block;
+    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--dust);
+  }
+  .stop-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem; font-weight: 700; color: rgba(26,23,20,0.08);
+    line-height: 1;
+  }
+  .drive-note {
+    font-size: 0.7rem; color: var(--dust); margin-top: 1rem; line-height: 1.5;
+    padding-top: 1rem; border-top: 1px dashed rgba(26,23,20,0.15);
+  }
+  .drive-note strong { color: var(--ink); }
+
+  .stop-body {}
+  .stop-city {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;
+    display: flex; align-items: baseline; gap: 0.8rem;
+  }
+  .stop-nights {
+    font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--dust); font-family: 'DM Sans', sans-serif; font-weight: 400;
+  }
+  .stop-desc {
+    font-size: 0.95rem; color: #5A5048; line-height: 1.75;
+    margin-bottom: 1.5rem; max-width: 65ch;
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .tag {
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.35rem 0.8rem; border: 1px solid rgba(26,23,20,0.2);
+    border-radius: 2px; color: var(--dust);
+  }
+
+  /* Photo grid */
+  .photos { display: grid; gap: 0.5rem; margin-top: 1rem; }
+  .photos.two { grid-template-columns: 1fr 1fr; }
+  .photos.three { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
+  .photos.one { grid-template-columns: 1fr; }
+
+  .photo-item { overflow: hidden; border-radius: 2px; aspect-ratio: 16/10; }
+  .photos.three .photo-item:first-child { grid-row: 1 / 3; aspect-ratio: auto; }
+  .photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s cubic-bezier(0.16,1,0.3,1); }
+  .photo-item:hover img { transform: scale(1.04); }
+  .photo-caption { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dust); margin-top: 0.4rem; }
+
+  /* TIP BOX */
+  .tip-box {
+    background: white; border-left: 3px solid var(--gold);
+    padding: 1rem 1.25rem; border-radius: 0 4px 4px 0;
+    font-size: 0.85rem; color: #5A5048; line-height: 1.6;
+    margin-top: 1rem;
+  }
+  .tip-box strong { color: var(--ink); }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid rgba(26,23,20,0.1);
+    padding: 2rem 3rem; text-align: center;
+    font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--dust);
+  }
+
+  @media (max-width: 680px) {
+    nav { padding: 1rem 1.5rem; }
+    .main { padding: 2.5rem 1.5rem; }
+    .hero-content { padding: 2rem 1.5rem; }
+    .stop-block { grid-template-columns: 1fr; gap: 1rem; }
+    .stop-num { display: none; }
+    .photos.three { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+    .photos.three .photo-item:first-child { grid-row: auto; aspect-ratio: 16/10; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Volver
+  </a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Italia</span>
+  <span class="nav-days">15 días</span>
+</nav>
+
+<div class="hero">
+  <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1600&q=80" alt="Roma, Italia"/>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <span class="hero-eyebrow">Itinerario completo</span>
+    <h1 class="hero-title">Italia en <em>15 días</em></h1>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val">7</span><span class="stat-lbl">Ciudades</span></div>
+      <div class="stat"><span class="stat-val">~1.400</span><span class="stat-lbl">Km en auto</span></div>
+      <div class="stat"><span class="stat-val">Roma</span><span class="stat-lbl">Inicio y fin</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Route summary -->
+  <span class="section-label">Ruta completa</span>
+  <div class="route-bar">
+    <div class="route-stop"><span class="rs-days">Días 1–4</span><span class="rs-city">Roma</span></div>
+    <div class="route-stop"><span class="rs-days">Días 5–7</span><span class="rs-city">Toscana</span></div>
+    <div class="route-stop"><span class="rs-days">Días 8–9</span><span class="rs-city">Florencia</span></div>
+    <div class="route-stop"><span class="rs-days">Días 10–11</span><span class="rs-city">Cinque Terre</span></div>
+    <div class="route-stop"><span class="rs-days">Día 12</span><span class="rs-city">Lago di Como</span></div>
+    <div class="route-stop"><span class="rs-days">Días 13–14</span><span class="rs-city">Venecia</span></div>
+    <div class="route-stop"><span class="rs-days">Día 15</span><span class="rs-city">Bolonia</span></div>
+  </div>
+
+  <!-- Map -->
+  <span class="section-label">Mapa del recorrido</span>
+  <div class="map-container">
+    <div id="map-italia"></div>
+  </div>
+
+  <!-- Itinerary -->
+  <span class="section-label">Itinerario día a día</span>
+  <div class="itinerary">
+
+    <!-- Roma -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 1–4</span>
+        <div class="stop-num">01</div>
+        <div class="drive-note"><strong>Tip:</strong> No alquiles el auto todavía. Roma en auto es una pesadilla. Recogelo al salir el día 5.</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Roma <span class="stop-nights">4 noches</span></div>
+        <p class="stop-desc">La capital eterna. Cuatro días son justos para el Vaticano y los Museos Vaticanos (reservar con anticipación), el Foro Romano y el Coliseo, la Fontana di Trevi al amanecer cuando no hay nadie, y el barrio de Trastevere por la noche. El cuarto día lo dedicás a perderte sin mapa.</p>
+        <div class="tags">
+          <span class="tag">Coliseo</span>
+          <span class="tag">Vaticano</span>
+          <span class="tag">Trastevere</span>
+          <span class="tag">Fontana di Trevi</span>
+          <span class="tag">Foro Romano</span>
+        </div>
+        <div class="photos three">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80" alt="Coliseo Roma" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1531572753322-ad063cecc140?w=600&q=80" alt="Fontana di Trevi" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1559570278-7aa9c94b7bfd?w=600&q=80" alt="Vaticano" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toscana -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 5–7</span>
+        <div class="stop-num">02</div>
+        <div class="drive-note"><strong>Roma → Siena</strong><br/>~2:30 h · Autopista A1</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Toscana <span class="stop-nights">3 noches</span></div>
+        <p class="stop-desc">El corazón de Italia. Siena con su Piazza del Campo medieval, la ruta del Chianti entre bodegas y cipreses, el Val d'Orcia patrimonio UNESCO, Pienza y su Pecorino, Montalcino con el Brunello, y San Gimignano con las torres medievales. El auto es imprescindible acá.</p>
+        <div class="tags">
+          <span class="tag">Siena</span>
+          <span class="tag">Val d'Orcia</span>
+          <span class="tag">San Gimignano</span>
+          <span class="tag">Chianti</span>
+          <span class="tag">Montalcino</span>
+        </div>
+        <div class="photos two">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1523528283115-9bf9b1699245?w=800&q=80" alt="Val d'Orcia Toscana" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1534237886190-ced735ca4b73?w=800&q=80" alt="San Gimignano" loading="lazy"/></div>
+        </div>
+        <div class="tip-box"><strong>Alojate en un agriturismo</strong> entre Siena y Pienza — cena con productos de la finca incluida, y la foto de los cipreses al amanecer desde la habitación.</div>
+      </div>
+    </div>
+
+    <!-- Florencia -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 8–9</span>
+        <div class="stop-num">03</div>
+        <div class="drive-note"><strong>Siena → Florencia</strong><br/>~1:15 h · ruta panorámica</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Florencia <span class="stop-nights">2 noches</span></div>
+        <p class="stop-desc">Cuna del Renacimiento. Los Uffizi con la Primavera de Botticelli y la Venus requieren reserva anticipada obligatoria. El David de Miguel Ángel en la Accademia te deja sin palabras. La cúpula del Brunelleschi domina toda la ciudad. Cena en el barrio Oltrarno, más auténtico que el centro turístico.</p>
+        <div class="tags">
+          <span class="tag">Uffizi</span>
+          <span class="tag">Duomo</span>
+          <span class="tag">David</span>
+          <span class="tag">Ponte Vecchio</span>
+          <span class="tag">Oltrarno</span>
+        </div>
+        <div class="photos two">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1541370976299-4d24be63be18?w=800&q=80" alt="Florencia Duomo" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1529260830199-42c24126f198?w=800&q=80" alt="Ponte Vecchio" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cinque Terre -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 10–11</span>
+        <div class="stop-num">04</div>
+        <div class="drive-note"><strong>Florencia → Cinque Terre</strong><br/>~2:30 h · via La Spezia</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Cinque Terre <span class="stop-nights">2 noches</span></div>
+        <p class="stop-desc">Cinco pueblitos de colores pegados al acantilado. El auto se deja en La Spezia o Riomaggiore y se viaja entre pueblos en tren o ferry. Vernazza y Manarola son los más fotogénicos. El sentiero azzurro (sendero azul) conecta los cinco pueblos a pie con vistas espectaculares al Mediterráneo.</p>
+        <div class="tags">
+          <span class="tag">Vernazza</span>
+          <span class="tag">Manarola</span>
+          <span class="tag">Sendero Azul</span>
+          <span class="tag">Ferry</span>
+          <span class="tag">Focaccia ligure</span>
+        </div>
+        <div class="photos two">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800&q=80" alt="Cinque Terre" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1538944495092-d39f87cddaaf?w=800&q=80" alt="Manarola Cinque Terre" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lago di Como -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Día 12</span>
+        <div class="stop-num">05</div>
+        <div class="drive-note"><strong>Cinque Terre → Como</strong><br/>~2 h · autopista norte</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Lago di Como <span class="stop-nights">1 noche</span></div>
+        <p class="stop-desc">El lago más glamoroso de Europa. Bajás por la orilla oeste desde Como por la SS340 pegada a los acantilados — uno de los drives más espectaculares de Italia. Bellagio con sus callejuelas empedradas, Varenna más tranquila, y la Villa del Balbianello (James Bond, Star Wars) que requiere reserva anticipada.</p>
+        <div class="tags">
+          <span class="tag">Bellagio</span>
+          <span class="tag">Varenna</span>
+          <span class="tag">Villa Balbianello</span>
+          <span class="tag">SS340</span>
+          <span class="tag">Ferry entre pueblos</span>
+        </div>
+        <div class="photos one">
+          <div class="photo-item" style="aspect-ratio:21/9"><img src="https://images.unsplash.com/photo-1537800681428-06bec40a8219?w=1200&q=80" alt="Lago di Como" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Venecia -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 13–14</span>
+        <div class="stop-num">06</div>
+        <div class="drive-note"><strong>Como → Venecia</strong><br/>~2:30 h · A4</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Venecia <span class="stop-nights">2 noches</span></div>
+        <p class="stop-desc">La ciudad más romántica del mundo. El auto se deja en el parking de Piazzale Roma. Imprescindible perderse por los calli alejados del turismo, tomar el Vaporetto por el Gran Canal, y visitar Burano (la isla de casas de colores) en el segundo día. El mejor momento es al amanecer, antes de que lleguen los tours.</p>
+        <div class="tags">
+          <span class="tag">Gran Canal</span>
+          <span class="tag">Burano</span>
+          <span class="tag">Plaza San Marcos</span>
+          <span class="tag">Dorsoduro</span>
+          <span class="tag">Vaporetto</span>
+        </div>
+        <div class="photos three">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?w=800&q=80" alt="Venecia Gran Canal" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=600&q=80" alt="Venecia" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1565967511849-76a60a516170?w=600&q=80" alt="Burano" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bolonia -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Día 15</span>
+        <div class="stop-num">07</div>
+        <div class="drive-note"><strong>Venecia → Bolonia → Roma</strong><br/>~1:30 h + ~3:30 h</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Bolonia <span class="stop-nights">1 noche + vuelo</span></div>
+        <p class="stop-desc">La Grassa — capital gastronómica de Italia. Un día para los pórticos medievales UNESCO, las torres inclinadas, y comer la mejor boloñesa de tu vida en una osteria del Quadrilatero. Desde Bolonia son solo 3:30 h de autopista hasta Roma Fiumicino para el vuelo de regreso.</p>
+        <div class="tags">
+          <span class="tag">Pórticos UNESCO</span>
+          <span class="tag">Tagliatelle al ragù</span>
+          <span class="tag">Torres medievales</span>
+          <span class="tag">Quadrilatero</span>
+        </div>
+        <div class="photos one">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1568152950566-6b74f8df0f57?w=1000&q=80" alt="Bolonia pórticos" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /itinerary -->
+</div><!-- /main -->
+
+<footer>
+  <a href="index.html" style="color:var(--dust);text-decoration:none;">← Volver al inicio</a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  Italia · 15 días · En pareja · En auto
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map-italia', { zoomControl: true, scrollWheelZoom: false });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO',
+    maxZoom: 13
+  }).addTo(map);
+
+  const stops = [
+    { name: 'Roma', coords: [41.9028, 12.4964], days: 'Días 1–4', nights: '4 noches' },
+    { name: 'Toscana / Siena', coords: [43.3188, 11.3307], days: 'Días 5–7', nights: '3 noches' },
+    { name: 'Florencia', coords: [43.7696, 11.2558], days: 'Días 8–9', nights: '2 noches' },
+    { name: 'Cinque Terre', coords: [44.1254, 9.7177], days: 'Días 10–11', nights: '2 noches' },
+    { name: 'Lago di Como', coords: [45.9845, 9.2745], days: 'Día 12', nights: '1 noche' },
+    { name: 'Venecia', coords: [45.4408, 12.3155], days: 'Días 13–14', nights: '2 noches' },
+    { name: 'Bolonia', coords: [44.4949, 11.3426], days: 'Día 15', nights: '1 noche' },
+  ];
+
+  const routeCoords = stops.map(s => s.coords);
+
+  // Draw route line
+  L.polyline(routeCoords, {
+    color: '#B5451B',
+    weight: 2.5,
+    opacity: 0.7,
+    dashArray: '6, 6'
+  }).addTo(map);
+
+  // Custom icon
+  function makeIcon(num) {
+    return L.divIcon({
+      className: '',
+      html: `<div style="
+        width:28px;height:28px;border-radius:50%;
+        background:#B5451B;color:white;
+        display:flex;align-items:center;justify-content:center;
+        font-size:11px;font-weight:500;
+        font-family:'DM Sans',sans-serif;
+        border:2px solid white;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25);
+      ">${num}</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+  }
+
+  stops.forEach((stop, i) => {
+    L.marker(stop.coords, { icon: makeIcon(i + 1) })
+      .addTo(map)
+      .bindPopup(`
+        <div style="font-family:'DM Sans',sans-serif;padding:4px 2px">
+          <div style="font-weight:500;font-size:14px;margin-bottom:2px">${stop.name}</div>
+          <div style="font-size:11px;color:#8C7B6B;letter-spacing:0.05em">${stop.days} · ${stop.nights}</div>
+        </div>
+      `, { closeButton: false });
+  });
+
+  map.fitBounds(L.latLngBounds(routeCoords), { padding: [40, 40] });
+</script>
+</body>
+</html>

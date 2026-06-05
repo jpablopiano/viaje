@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oeste USA — 15 Días</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F5F0E8;
+    --ink: #1A1714;
+    --gold: #C9933A;
+    --rust: #2D5FA0;
+    --sage: #3A6B8A;
+    --dust: #8C7B6B;
+    --light: #EDE8DE;
+    --accent: #2D5FA0;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 100; opacity: 0.4;
+  }
+
+  nav {
+    position: sticky; top: 0;
+    background: rgba(245,240,232,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(26,23,20,0.1);
+    padding: 1rem 3rem;
+    display: flex; align-items: center; gap: 1.5rem;
+    z-index: 50;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--dust); text-decoration: none; font-weight: 500; transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--ink); }
+  .nav-sep { color: var(--dust); opacity: 0.4; }
+  .nav-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--ink); }
+  .nav-days { margin-left: auto; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dust); }
+
+  .hero { height: 70vh; min-height: 480px; position: relative; overflow: hidden; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(10,20,30,0.1) 0%, rgba(10,20,30,0.72) 100%);
+  }
+  .hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 3rem; color: white; }
+  .hero-eyebrow { font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.7; margin-bottom: 0.8rem; display: block; }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: clamp(3rem, 7vw, 5.5rem); line-height: 1; margin-bottom: 1rem; }
+  .hero-title em { font-style: italic; color: #7ABDE8; }
+  .stats-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .stat { text-align: left; }
+  .stat-val { font-size: 1.5rem; font-weight: 500; display: block; }
+  .stat-lbl { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.6; }
+
+  .main { max-width: 1200px; margin: 0 auto; padding: 4rem 3rem; }
+
+  .route-bar {
+    display: flex; align-items: center; gap: 0; overflow-x: auto;
+    border: 1px solid rgba(26,23,20,0.12); border-radius: 4px;
+    background: white; margin-bottom: 4rem;
+    scrollbar-width: none;
+  }
+  .route-bar::-webkit-scrollbar { display: none; }
+  .route-stop {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 1rem 1.2rem; gap: 0.3rem; flex-shrink: 0;
+    position: relative; text-align: center;
+  }
+  .route-stop:not(:last-child)::after {
+    content: '→';
+    position: absolute; right: -0.55rem;
+    color: var(--dust); font-size: 0.8rem; top: 50%; transform: translateY(-50%); z-index: 1;
+  }
+  .rs-days { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dust); }
+  .rs-city { font-family: 'Playfair Display', serif; font-size: 0.9rem; color: var(--ink); }
+
+  .section-label { font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dust); margin-bottom: 1rem; display: block; }
+  .map-container { height: 450px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(26,23,20,0.12); margin-bottom: 5rem; }
+  #map-usa { height: 100%; width: 100%; }
+
+  .itinerary { display: flex; flex-direction: column; gap: 0; }
+  .stop-block { display: grid; grid-template-columns: 120px 1fr; border-top: 1px solid rgba(26,23,20,0.1); padding: 3rem 0; gap: 3rem; }
+  .stop-meta { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.2rem; }
+  .stop-days-badge { display: inline-block; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dust); }
+  .stop-num { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; color: rgba(26,23,20,0.08); line-height: 1; }
+  .drive-note { font-size: 0.7rem; color: var(--dust); margin-top: 1rem; line-height: 1.5; padding-top: 1rem; border-top: 1px dashed rgba(26,23,20,0.15); }
+  .drive-note strong { color: var(--ink); }
+  .stop-body {}
+  .stop-city { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem; display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; }
+  .stop-nights { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dust); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .stop-desc { font-size: 0.95rem; color: #5A5048; line-height: 1.75; margin-bottom: 1.5rem; max-width: 65ch; }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .tag { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.35rem 0.8rem; border: 1px solid rgba(26,23,20,0.2); border-radius: 2px; color: var(--dust); }
+  .photos { display: grid; gap: 0.5rem; margin-top: 1rem; }
+  .photos.two { grid-template-columns: 1fr 1fr; }
+  .photos.three { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
+  .photos.one { grid-template-columns: 1fr; }
+  .photo-item { overflow: hidden; border-radius: 2px; aspect-ratio: 16/10; }
+  .photos.three .photo-item:first-child { grid-row: 1 / 3; aspect-ratio: auto; }
+  .photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s cubic-bezier(0.16,1,0.3,1); }
+  .photo-item:hover img { transform: scale(1.04); }
+  .tip-box { background: white; border-left: 3px solid #2D5FA0; padding: 1rem 1.25rem; border-radius: 0 4px 4px 0; font-size: 0.85rem; color: #5A5048; line-height: 1.6; margin-top: 1rem; }
+  .tip-box strong { color: var(--ink); }
+
+  /* Phase labels */
+  .phase-header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.5rem 0 0.5rem;
+  }
+  .phase-pill {
+    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 0.35rem 0.8rem; border-radius: 20px; font-weight: 500;
+  }
+
+  footer { border-top: 1px solid rgba(26,23,20,0.1); padding: 2rem 3rem; text-align: center; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dust); }
+
+  @media (max-width: 680px) {
+    nav { padding: 1rem 1.5rem; }
+    .main { padding: 2.5rem 1.5rem; }
+    .hero-content { padding: 2rem 1.5rem; }
+    .stop-block { grid-template-columns: 1fr; gap: 1rem; }
+    .stop-num { display: none; }
+    .photos.three { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+    .photos.three .photo-item:first-child { grid-row: auto; aspect-ratio: 16/10; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Volver
+  </a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Oeste USA</span>
+  <span class="nav-days">15 días</span>
+</nav>
+
+<div class="hero">
+  <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80" alt="Yosemite National Park"/>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <span class="hero-eyebrow">Itinerario completo</span>
+    <h1 class="hero-title">Oeste USA en <em>15 días</em></h1>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val">8</span><span class="stat-lbl">Destinos</span></div>
+      <div class="stat"><span class="stat-val">~3.000</span><span class="stat-lbl">Km en auto</span></div>
+      <div class="stat"><span class="stat-val">LAX → LAX</span><span class="stat-lbl">Ruta circular</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <span class="section-label">Ruta completa</span>
+  <div class="route-bar">
+    <div class="route-stop"><span class="rs-days">Día 1</span><span class="rs-city">Los Ángeles</span></div>
+    <div class="route-stop"><span class="rs-days">Día 2</span><span class="rs-city">Big Sur</span></div>
+    <div class="route-stop"><span class="rs-days">Días 3–9</span><span class="rs-city">San Francisco</span></div>
+    <div class="route-stop"><span class="rs-days">Días 10–11</span><span class="rs-city">Yosemite</span></div>
+    <div class="route-stop"><span class="rs-days">Días 12–13</span><span class="rs-city">Las Vegas</span></div>
+    <div class="route-stop"><span class="rs-days">Día 14</span><span class="rs-city">Grand Canyon</span></div>
+    <div class="route-stop"><span class="rs-days">Día 15</span><span class="rs-city">LAX</span></div>
+  </div>
+
+  <span class="section-label">Mapa del recorrido</span>
+  <div class="map-container">
+    <div id="map-usa"></div>
+  </div>
+
+  <span class="section-label">Itinerario día a día</span>
+  <div class="itinerary">
+
+    <!-- LA -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Día 1</span>
+        <div class="stop-num">01</div>
+        <div class="drive-note"><strong>Tip:</strong> Recogés el auto en LAX el día 1 y lo devolvés el día 15. Un solo auto, toda la ruta.</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Los Ángeles <span class="stop-nights">1 noche</span></div>
+        <p class="stop-desc">Llegada a LAX, recuperar el jet lag. Un día tranquilo: Griffith Observatory con vistas panorámicas a toda la ciudad y el signo de Hollywood, paseo por los barrios de Los Feliz o Silver Lake. Al día siguiente salís temprano por la Pacific Coast Highway.</p>
+        <div class="tags">
+          <span class="tag">Griffith Observatory</span>
+          <span class="tag">Hollywood Sign</span>
+          <span class="tag">Silver Lake</span>
+          <span class="tag">Venice Beach</span>
+        </div>
+        <div class="photos two">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=800&q=80" alt="Los Angeles skyline" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1580655653885-65763b2597d0?w=800&q=80" alt="Hollywood Sign" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Big Sur -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Día 2</span>
+        <div class="stop-num">02</div>
+        <div class="drive-note"><strong>LA → Big Sur</strong><br/>~6 h con paradas · Pacific Coast Hwy</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Pacific Coast Hwy — Big Sur <span class="stop-nights">1 noche</span></div>
+        <p class="stop-desc">Uno de los drives más espectaculares del mundo: la Ruta 1 pegada a los acantilados del Pacífico. El puente Bixby Creek es la foto icónica. Parás en los miradores, en las playas de arena negra, y llegás a Big Sur al atardecer. Dormís en Big Sur o en el mágico pueblito de Carmel-by-the-Sea.</p>
+        <div class="tags">
+          <span class="tag">Bixby Creek Bridge</span>
+          <span class="tag">Big Sur</span>
+          <span class="tag">Carmel</span>
+          <span class="tag">Acantilados del Pacífico</span>
+        </div>
+        <div class="photos one">
+          <div class="photo-item" style="aspect-ratio:21/9"><img src="https://images.unsplash.com/photo-1549880338-65ddcdfd017b?w=1200&q=80" alt="Big Sur Pacific Coast Highway" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- San Francisco -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 3–9</span>
+        <div class="stop-num">03</div>
+        <div class="drive-note"><strong>Big Sur → SF</strong><br/>~3 h · Ruta 1 norte</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">San Francisco <span class="stop-nights">7 noches</span></div>
+        <p class="stop-desc">Tu base de operaciones. La ciudad más rica en personalidad de EEUU. Instalate en The Mission, Hayes Valley o Nob Hill y explorá sin cambiar de hotel. Desde acá hacés excursiones de día a Napa, Silicon Valley y la costa.</p>
+        <div class="tags">
+          <span class="tag">Golden Gate</span>
+          <span class="tag">Alcatraz</span>
+          <span class="tag">Napa Valley</span>
+          <span class="tag">Silicon Valley</span>
+          <span class="tag">Muir Woods</span>
+          <span class="tag">Sausalito</span>
+        </div>
+        <div style="display:grid;gap:0.4rem;margin-bottom:1rem">
+          <div class="tip-box" style="border-left-color:#2D5FA0"><strong>Día 5 — Muir Woods:</strong> Bosque de secuoyas centenarias a 30 min. Reservar entrada online con anticipación.</div>
+          <div class="tip-box" style="border-left-color:#2D5FA0"><strong>Día 6 — Napa Valley:</strong> ~1:15 h. Bodegas Stag's Leap, Duckhorn o Domaine Carneros. Almuerzo en Yountville.</div>
+          <div class="tip-box" style="border-left-color:#2D5FA0"><strong>Día 7 — Silicon Valley:</strong> Apple Park, Computer History Museum, Googleplex. Cena en Palo Alto.</div>
+        </div>
+        <div class="photos three">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=800&q=80" alt="Golden Gate San Francisco" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1474552226712-ac0f0961a954?w=600&q=80" alt="San Francisco" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=600&q=80" alt="Napa Valley" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yosemite -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 10–11</span>
+        <div class="stop-num">04</div>
+        <div class="drive-note"><strong>SF → Yosemite</strong><br/>~3:30 h · CA-120<br/><br/><strong>Yosemite → Las Vegas</strong><br/>~5:30 h · US-395 sur · Sierra Nevada de fondo</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Yosemite National Park <span class="stop-nights">2 noches</span></div>
+        <p class="stop-desc">En mayo-junio Yosemite está en su mejor momento: cascadas al máximo por el deshielo, valles verdes, cumbres nevadas. Dos días completos para Tunnel View (la postal clásica), Yosemite Falls y Bridalveil Fall, Mirror Lake con el reflejo del Half Dome, y Glacier Point con vistas de 360°. Reservá el acceso diario online con semanas de anticipación.</p>
+        <div class="tags">
+          <span class="tag">Tunnel View</span>
+          <span class="tag">Yosemite Falls</span>
+          <span class="tag">Half Dome</span>
+          <span class="tag">Glacier Point</span>
+          <span class="tag">Bridalveil Fall</span>
+        </div>
+        <div class="photos three">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1562310503-a918c4c61e38?w=800&q=80" alt="Yosemite Valley" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=80" alt="Yosemite Half Dome" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=600&q=80" alt="Yosemite Falls" loading="lazy"/></div>
+        </div>
+        <div class="tip-box"><strong>La ruta US-395</strong> entre Yosemite y Las Vegas es una de las grandes desconocidas: Sierra Nevada nevada a la izquierda, desierto de Mojave a la derecha. Vale el trayecto largo.</div>
+      </div>
+    </div>
+
+    <!-- Las Vegas -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 12–13</span>
+        <div class="stop-num">05</div>
+        <div class="drive-note"><strong>Las Vegas → Grand Canyon</strong><br/>~4:30 h · US-93 → AZ-89</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Las Vegas <span class="stop-nights">2 noches</span></div>
+        <p class="stop-desc">La ciudad más irreal del mundo. El Strip de noche es un espectáculo en sí mismo aunque no juegues. Fremont Street tiene un ambiente más auténtico. Excursión al Red Rock Canyon a 30 min: roca naranja y silencio absoluto. Shows de primer nivel y gastronomía de chefs con estrella Michelin completan los dos días.</p>
+        <div class="tags">
+          <span class="tag">The Strip nocturno</span>
+          <span class="tag">Fremont Street</span>
+          <span class="tag">Red Rock Canyon</span>
+          <span class="tag">Shows</span>
+          <span class="tag">Gastronomía</span>
+        </div>
+        <div class="photos two">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=800&q=80" alt="Las Vegas Strip" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=800&q=80" alt="Red Rock Canyon" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grand Canyon -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 14–15</span>
+        <div class="stop-num">06</div>
+        <div class="drive-note"><strong>Grand Canyon → LAX</strong><br/>~7 h · AZ-89 → I-40 → I-15 → I-10<br/>Salir ~8 AM · llegar LAX ~3 PM</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Grand Canyon <span class="stop-nights">1 noche dentro del parque</span></div>
+        <p class="stop-desc">Llegás a media tarde del día 14 para el atardecer desde Mather Point — los cañones en naranja y rojo. Con 1 noche dentro del parque tenés el amanecer del día 15 con los colores en violeta y casi sin gente en los miradores. Bajás un tramo del Bright Angel Trail y salís con calma hacia LAX. Reservar el Bright Angel Lodge con 6 meses de anticipación.</p>
+        <div class="tags">
+          <span class="tag">Atardecer Mather Point</span>
+          <span class="tag">Amanecer South Rim</span>
+          <span class="tag">Bright Angel Trail</span>
+          <span class="tag">Rim Trail</span>
+          <span class="tag">Bright Angel Lodge</span>
+        </div>
+        <div class="photos three">
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1615551043360-33de8b5f410c?w=800&q=80" alt="Grand Canyon South Rim" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=600&q=80" alt="Grand Canyon sunset" loading="lazy"/></div>
+          <div class="photo-item"><img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=600&q=80" alt="Grand Canyon trail" loading="lazy"/></div>
+        </div>
+        <div class="tip-box"><strong>Dormir dentro del parque marca la diferencia.</strong> El amanecer desde el South Rim sin la multitud de los tours de día es una experiencia completamente distinta. Reservá con meses de anticipación.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  <a href="index.html" style="color:var(--dust);text-decoration:none;">← Volver al inicio</a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  Oeste USA · 15 días · En pareja · Un auto · LAX → LAX
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map-usa', { zoomControl: true, scrollWheelZoom: false });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO',
+    maxZoom: 12
+  }).addTo(map);
+
+  const stops = [
+    { name: 'Los Ángeles', coords: [34.0522, -118.2437], days: 'Día 1', note: '1 noche' },
+    { name: 'Big Sur', coords: [36.2704, -121.8082], days: 'Día 2', note: '1 noche · Pacific Coast Hwy' },
+    { name: 'San Francisco', coords: [37.7749, -122.4194], days: 'Días 3–9', note: '7 noches · base de operaciones' },
+    { name: 'Napa Valley', coords: [38.2975, -122.2869], days: 'Día 6', note: 'Excursión desde SF' },
+    { name: 'Yosemite', coords: [37.8651, -119.5383], days: 'Días 10–11', note: '2 noches' },
+    { name: 'Las Vegas', coords: [36.1699, -115.1398], days: 'Días 12–13', note: '2 noches' },
+    { name: 'Grand Canyon', coords: [36.0544, -112.1401], days: 'Día 14', note: '1 noche dentro del parque' },
+  ];
+
+  const mainRoute = [
+    [34.0522, -118.2437],
+    [36.2704, -121.8082],
+    [37.7749, -122.4194],
+    [37.8651, -119.5383],
+    [36.1699, -115.1398],
+    [36.0544, -112.1401],
+    [34.0522, -118.2437],
+  ];
+
+  // Main route
+  L.polyline(mainRoute, { color: '#2D5FA0', weight: 2.5, opacity: 0.7, dashArray: '6, 6' }).addTo(map);
+
+  // Napa excursion dashed
+  L.polyline([[37.7749, -122.4194], [38.2975, -122.2869]], {
+    color: '#2D5FA0', weight: 1.5, opacity: 0.4, dashArray: '3, 5'
+  }).addTo(map);
+
+  function makeIcon(num, isExcursion) {
+    const bg = isExcursion ? '#5C7A5C' : '#2D5FA0';
+    return L.divIcon({
+      className: '',
+      html: `<div style="
+        width:28px;height:28px;border-radius:50%;
+        background:${bg};color:white;
+        display:flex;align-items:center;justify-content:center;
+        font-size:11px;font-weight:500;
+        font-family:'DM Sans',sans-serif;
+        border:2px solid white;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25);
+      ">${num}</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+  }
+
+  stops.forEach((stop, i) => {
+    const isExcursion = stop.name === 'Napa Valley';
+    L.marker(stop.coords, { icon: makeIcon(isExcursion ? '☆' : i + 1, isExcursion) })
+      .addTo(map)
+      .bindPopup(`
+        <div style="font-family:'DM Sans',sans-serif;padding:4px 2px">
+          <div style="font-weight:500;font-size:14px;margin-bottom:2px">${stop.name}</div>
+          <div style="font-size:11px;color:#8C7B6B;letter-spacing:0.05em">${stop.days} · ${stop.note}</div>
+        </div>
+      `, { closeButton: false });
+  });
+
+  map.fitBounds(L.latLngBounds(mainRoute), { padding: [40, 40] });
+</script>
+</body>
+</html>
