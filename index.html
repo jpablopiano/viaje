@@ -114,15 +114,15 @@
 
   .cards {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.2rem;
-    max-width: 1100px;
+    max-width: 900px;
     width: 100%;
     margin: 0 auto;
     padding-top: 1rem;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 700px) {
     .cards { grid-template-columns: 1fr; max-width: 480px; }
   }
 
@@ -354,6 +354,24 @@
           <span class="card-flag">🏰</span>
           <span class="card-title">Oeste USA + Disney</span>
           <span class="card-sub">15 días · con Disneyland</span>
+          <span class="card-btn">
+            Ver itinerario
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </span>
+        </div>
+      </a>
+
+      <a href="./este.html" class="trip-card">
+        <img
+          src="./img/ny-hero.jpg"
+          alt="Nueva York"
+          loading="eager"
+        />
+        <div class="card-overlay"></div>
+        <div class="card-content">
+          <span class="card-flag">🗽</span>
+          <span class="card-title">NY · Chicago · Toronto</span>
+          <span class="card-sub">15 días · 2 países</span>
           <span class="card-btn">
             Ver itinerario
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>

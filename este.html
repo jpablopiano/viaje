@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NY · Chicago · Toronto — 15 Días</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F5F0E8;
+    --ink: #1A1714;
+    --gold: #C9933A;
+    --dust: #8C7B6B;
+    --light: #EDE8DE;
+    --accent: #3A5F7A;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 100; opacity: 0.4;
+  }
+
+  nav {
+    position: sticky; top: 0;
+    background: rgba(245,240,232,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(26,23,20,0.1);
+    padding: 1rem 3rem;
+    display: flex; align-items: center; gap: 1.5rem;
+    z-index: 50;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--dust); text-decoration: none; font-weight: 500; transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--ink); }
+  .nav-sep { color: var(--dust); opacity: 0.4; }
+  .nav-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--ink); }
+  .nav-days { margin-left: auto; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dust); }
+
+  .hero { height: 70vh; min-height: 480px; position: relative; overflow: hidden; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(10,15,25,0.15) 0%, rgba(10,15,25,0.72) 100%);
+  }
+  .hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 3rem; color: white; }
+  .hero-eyebrow { font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.7; margin-bottom: 0.8rem; display: block; }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: clamp(2.6rem, 6.5vw, 5rem); line-height: 1.05; margin-bottom: 1rem; }
+  .hero-title em { font-style: italic; color: #8FBEE8; }
+  .stats-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .stat { text-align: left; }
+  .stat-val { font-size: 1.5rem; font-weight: 500; display: block; }
+  .stat-lbl { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.6; }
+
+  .main { max-width: 1200px; margin: 0 auto; padding: 4rem 3rem; }
+
+  .route-bar {
+    display: flex; align-items: center; gap: 0; overflow-x: auto;
+    border: 1px solid rgba(26,23,20,0.12); border-radius: 4px;
+    background: white; margin-bottom: 4rem;
+    scrollbar-width: none;
+  }
+  .route-bar::-webkit-scrollbar { display: none; }
+  .route-stop {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 1rem 1.2rem; gap: 0.3rem; flex-shrink: 0;
+    position: relative; text-align: center;
+  }
+  .route-stop:not(:last-child)::after {
+    content: '→';
+    position: absolute; right: -0.55rem;
+    color: var(--dust); font-size: 0.8rem; top: 50%; transform: translateY(-50%); z-index: 1;
+  }
+  .rs-days { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dust); }
+  .rs-city { font-family: 'Playfair Display', serif; font-size: 0.9rem; color: var(--ink); }
+
+  .section-label { font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dust); margin-bottom: 1rem; display: block; }
+  .map-container { height: 450px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(26,23,20,0.12); margin-bottom: 5rem; }
+  #map-este { height: 100%; width: 100%; }
+
+  .itinerary { display: flex; flex-direction: column; gap: 0; }
+  .stop-block { display: grid; grid-template-columns: 120px 1fr; border-top: 1px solid rgba(26,23,20,0.1); padding: 3rem 0; gap: 3rem; }
+  .stop-meta { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.2rem; }
+  .stop-days-badge { display: inline-block; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dust); }
+  .stop-num { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; color: rgba(26,23,20,0.08); line-height: 1; }
+  .drive-note { font-size: 0.7rem; color: var(--dust); margin-top: 1rem; line-height: 1.5; padding-top: 1rem; border-top: 1px dashed rgba(26,23,20,0.15); }
+  .drive-note strong { color: var(--ink); }
+  .stop-body {}
+  .stop-city { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem; display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; }
+  .stop-nights { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dust); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .stop-desc { font-size: 0.95rem; color: #5A5048; line-height: 1.75; margin-bottom: 1.5rem; max-width: 65ch; }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .tag { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.35rem 0.8rem; border: 1px solid rgba(26,23,20,0.2); border-radius: 2px; color: var(--dust); }
+  .photos { display: grid; gap: 0.5rem; margin-top: 1rem; }
+  .photos.two { grid-template-columns: 1fr 1fr; }
+  .photos.three { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
+  .photos.one { grid-template-columns: 1fr; }
+  .photo-item { overflow: hidden; border-radius: 2px; aspect-ratio: 16/10; }
+  .photos.three .photo-item:first-child { grid-row: 1 / 3; aspect-ratio: auto; }
+  .photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s cubic-bezier(0.16,1,0.3,1); }
+  .photo-item:hover img { transform: scale(1.04); }
+  .tip-box { background: white; border-left: 3px solid #3A5F7A; padding: 1rem 1.25rem; border-radius: 0 4px 4px 0; font-size: 0.85rem; color: #5A5048; line-height: 1.6; margin-top: 1rem; }
+  .tip-box strong { color: var(--ink); }
+
+  footer { border-top: 1px solid rgba(26,23,20,0.1); padding: 2rem 3rem; text-align: center; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dust); }
+
+  @media (max-width: 680px) {
+    nav { padding: 1rem 1.5rem; }
+    .main { padding: 2.5rem 1.5rem; }
+    .hero-content { padding: 2rem 1.5rem; }
+    .stop-block { grid-template-columns: 1fr; gap: 1rem; }
+    .stop-num { display: none; }
+    .photos.three { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+    .photos.three .photo-item:first-child { grid-row: auto; aspect-ratio: 16/10; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="./index.html" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Volver
+  </a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">NY · Chicago · Toronto</span>
+  <span class="nav-days">15 días</span>
+</nav>
+
+<div class="hero">
+  <img src="./img/ny-hero.jpg" alt="Nueva York"/>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <span class="hero-eyebrow">Itinerario completo · ida y vuelta a NY</span>
+    <h1 class="hero-title">NY, Chicago y <em>Toronto</em></h1>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val">4</span><span class="stat-lbl">Ciudades</span></div>
+      <div class="stat"><span class="stat-val">2</span><span class="stat-lbl">Países</span></div>
+      <div class="stat"><span class="stat-val">NY</span><span class="stat-lbl">Inicio y fin</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <span class="section-label">Ruta completa</span>
+  <div class="route-bar">
+    <div class="route-stop"><span class="rs-days">Días 1–5</span><span class="rs-city">Nueva York</span></div>
+    <div class="route-stop"><span class="rs-days">Días 6–9</span><span class="rs-city">Chicago</span></div>
+    <div class="route-stop"><span class="rs-days">Días 10–12</span><span class="rs-city">Toronto</span></div>
+    <div class="route-stop"><span class="rs-days">Día 13</span><span class="rs-city">Niágara</span></div>
+    <div class="route-stop"><span class="rs-days">Día 14</span><span class="rs-city">Nueva York</span></div>
+    <div class="route-stop"><span class="rs-days">Día 15</span><span class="rs-city">Vuelo a casa</span></div>
+  </div>
+
+  <span class="section-label">Mapa del recorrido</span>
+  <div class="map-container">
+    <div id="map-este"></div>
+  </div>
+
+  <span class="section-label">Itinerario día a día</span>
+  <div class="itinerary">
+
+    <!-- Nueva York -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 1–5</span>
+        <div class="stop-num">01</div>
+        <div class="drive-note"><strong>Tip:</strong> Sin auto en todo el viaje salvo Niágara. NY, Chicago y Toronto se disfrutan a pie y en transporte público.</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Nueva York <span class="stop-nights">5 noches</span></div>
+        <p class="stop-desc">Como ya la conocen, esta vez sin checklist de turista: Brooklyn a fondo (Williamsburg, Dumbo, el atardecer desde Brooklyn Heights Promenade), el West Village y Lower East Side de noche, la High Line completa terminando en Little Island, y un musical de Broadway que reserven antes de viajar. Si hay partido de los Yankees o de los Knicks en fecha, es un programa imperdible. Y los rooftops del verano neoyorquino: empezar la noche con un drink mirando el skyline no envejece nunca.</p>
+        <div class="tags">
+          <span class="tag">Williamsburg</span>
+          <span class="tag">Broadway</span>
+          <span class="tag">High Line</span>
+          <span class="tag">Dumbo</span>
+          <span class="tag">Rooftops</span>
+        </div>
+        <div class="photos two">
+          <div class="photo-item"><img src="./img/ny-brooklyn.jpg" alt="Brooklyn, Nueva York" loading="lazy"/></div>
+          <div class="photo-item"><img src="./img/ny-highline.jpg" alt="High Line, Nueva York" loading="lazy"/></div>
+        </div>
+        <div class="drive-note" style="border-top:1px solid rgba(26,23,20,0.15); margin-top:1.5rem;">✈️ NY → Chicago · vuelo ~2:30 h · LGA u EWR a ORD</div>
+      </div>
+    </div>
+
+    <!-- Chicago -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 6–9</span>
+        <div class="stop-num">02</div>
+        <div class="drive-note"><strong>Mejor zona para alojarse:</strong> el Loop o River North — todo a pie y sobre el río.</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Chicago <span class="stop-nights">4 noches</span></div>
+        <p class="stop-desc">La gran subestimada de EEUU. El river cruise de arquitectura es lo primero que tienen que hacer — en serio, es de las mejores experiencias urbanas del país y les ordena la ciudad para el resto de los días. Después: el Millennium Park con el Bean, el Art Institute (uno de los 3 mejores museos de América), caminar el Riverwalk al atardecer, deep dish pizza en Lou Malnati's, y blues en vivo en Kingston Mines o Buddy Guy's Legends. Un día para los barrios: Wicker Park y Logan Square, donde está el Chicago real. En mayo-junio la ciudad explota de vida y el lago Michigan parece un mar.</p>
+        <div class="tags">
+          <span class="tag">River Cruise arquitectura</span>
+          <span class="tag">The Bean</span>
+          <span class="tag">Art Institute</span>
+          <span class="tag">Deep dish</span>
+          <span class="tag">Blues en vivo</span>
+          <span class="tag">Riverwalk</span>
+        </div>
+        <div class="photos two">
+          <div class="photo-item"><img src="./img/chicago-river.jpg" alt="Chicago river y arquitectura" loading="lazy"/></div>
+          <div class="photo-item"><img src="./img/chicago-bean.jpg" alt="The Bean, Millennium Park" loading="lazy"/></div>
+        </div>
+        <div class="drive-note" style="border-top:1px solid rgba(26,23,20,0.15); margin-top:1.5rem;">✈️ Chicago → Toronto · vuelo ~1:30 h · ORD a YYZ · trámite migratorio canadiense al llegar</div>
+      </div>
+    </div>
+
+    <!-- Toronto -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 10–12</span>
+        <div class="stop-num">03</div>
+        <div class="drive-note"><strong>⚠️ eTA de Canadá:</strong> con visa americana vigente el trámite es online (~$7 CAD) y suele aprobarse en minutos. Hacelo antes de comprar los vuelos.</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Toronto <span class="stop-nights">3 noches</span></div>
+        <p class="stop-desc">La ciudad más multicultural del mundo — más de la mitad de sus habitantes nació fuera de Canadá, y eso se come: en una misma tarde pasás de dumplings en Chinatown a shawarma libanés en Kensington Market. Imperdibles: la CN Tower (si se animan, el EdgeWalk caminando por el borde exterior), el St. Lawrence Market para desayunar, el Distillery District con sus galerías en edificios victorianos, y el ferry a las Toronto Islands para la mejor vista del skyline. El tercer día queda libre para barrios: Queen West, Ossington, o un partido de los Blue Jays si hay fecha.</p>
+        <div class="tags">
+          <span class="tag">CN Tower</span>
+          <span class="tag">Kensington Market</span>
+          <span class="tag">Distillery District</span>
+          <span class="tag">Toronto Islands</span>
+          <span class="tag">St. Lawrence Market</span>
+        </div>
+        <div class="photos two">
+          <div class="photo-item"><img src="./img/toronto-skyline.jpg" alt="Skyline de Toronto" loading="lazy"/></div>
+          <div class="photo-item"><img src="./img/toronto-distillery.jpg" alt="Distillery District Toronto" loading="lazy"/></div>
+        </div>
+        <div class="drive-note" style="border-top:1px solid rgba(26,23,20,0.15); margin-top:1.5rem;">🚗 Toronto → Niágara · ~1:30 h en auto de alquiler · QEW por la costa del lago Ontario</div>
+      </div>
+    </div>
+
+    <!-- Niágara -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Día 13</span>
+        <div class="stop-num">04</div>
+        <div class="drive-note"><strong>Lado canadiense:</strong> es el que tiene las vistas panorámicas de frente. Del lado americano estás arriba de las cataratas pero no las ves.</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Cataratas del Niágara <span class="stop-nights">1 noche</span></div>
+        <p class="stop-desc">Dormir en Niágara vale completamente la pena: de noche las cataratas se iluminan de colores (y en temporada hay fuegos artificiales sobre el agua), y a la mañana siguiente las ven sin las multitudes de los tours de día. Lo imprescindible: el crucero Hornblower que te mete hasta la base de la Herradura (sí, te empapás, sí, vale la pena), el Journey Behind the Falls por los túneles detrás de la cortina de agua, y un paseo por Niagara-on-the-Lake, un pueblito victoriano a 20 minutos rodeado de viñedos — la región produce icewine, el vino dulce de uvas congeladas que es especialidad canadiense.</p>
+        <div class="tags">
+          <span class="tag">Hornblower Cruise</span>
+          <span class="tag">Journey Behind the Falls</span>
+          <span class="tag">Cataratas iluminadas</span>
+          <span class="tag">Niagara-on-the-Lake</span>
+          <span class="tag">Icewine</span>
+        </div>
+        <div class="photos one">
+          <div class="photo-item" style="aspect-ratio:21/9"><img src="./img/niagara-falls.jpg" alt="Cataratas del Niágara" loading="lazy"/></div>
+        </div>
+        <div class="drive-note" style="border-top:1px solid rgba(26,23,20,0.15); margin-top:1.5rem;">🚗 + ✈️ Día 14: Niágara → Toronto (~1:30 h, devolver auto) → vuelo a NY ~1:30 h. Alternativa: cruzar a Buffalo (30 min) y volar desde ahí, a veces más barato.</div>
+      </div>
+    </div>
+
+    <!-- NY final -->
+    <div class="stop-block">
+      <div class="stop-meta">
+        <span class="stop-days-badge">Días 14–15</span>
+        <div class="stop-num">05</div>
+        <div class="drive-note"><strong>Día 15:</strong> vuelo internacional desde JFK o EWR, sin conexiones apretadas ni estrés.</div>
+      </div>
+      <div class="stop-body">
+        <div class="stop-city">Nueva York — el cierre <span class="stop-nights">1 noche</span></div>
+        <p class="stop-desc">La última noche del viaje, de vuelta en la ciudad que más aman. Sin agenda: una cena de despedida en ese restaurante que quedó pendiente, un último paseo nocturno por donde les pinte — Times Square iluminado, el puente de Brooklyn, o simplemente el barrio del hotel. Al día siguiente, vuelo a casa descansados y sin el riesgo de hacer la conexión internacional el mismo día que vuelan desde Canadá.</p>
+        <div class="tags">
+          <span class="tag">Cena de despedida</span>
+          <span class="tag">Última caminata</span>
+          <span class="tag">Vuelo desde JFK/EWR</span>
+        </div>
+        <div class="photos one">
+          <div class="photo-item"><img src="./img/ny-night.jpg" alt="Nueva York de noche" loading="lazy"/></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <a href="./index.html" style="color:var(--dust);text-decoration:none;">← Volver al inicio</a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  NY · Chicago · Toronto · Niágara · 15 días · En pareja
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  const map = L.map('map-este', { zoomControl: true, scrollWheelZoom: false });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO',
+    maxZoom: 12
+  }).addTo(map);
+
+  const stops = [
+    { name: 'Nueva York', coords: [40.7128, -74.0060], days: 'Días 1–5 + noche final', note: '5 + 1 noches' },
+    { name: 'Chicago', coords: [41.8781, -87.6298], days: 'Días 6–9', note: '4 noches · vuelo desde NY' },
+    { name: 'Toronto', coords: [43.6532, -79.3832], days: 'Días 10–12', note: '3 noches · vuelo desde Chicago' },
+    { name: 'Niágara', coords: [43.0896, -79.0849], days: 'Día 13', note: '1 noche · en auto desde Toronto' },
+  ];
+
+  // Flight legs (dashed long) and drive leg (solid short)
+  const flightStyle = { color: '#3A5F7A', weight: 2, opacity: 0.6, dashArray: '8, 8' };
+  const driveStyle  = { color: '#3A5F7A', weight: 2.5, opacity: 0.8 };
+
+  L.polyline([[40.7128, -74.0060], [41.8781, -87.6298]], flightStyle).addTo(map); // NY → CHI
+  L.polyline([[41.8781, -87.6298], [43.6532, -79.3832]], flightStyle).addTo(map); // CHI → TOR
+  L.polyline([[43.6532, -79.3832], [43.0896, -79.0849]], driveStyle).addTo(map);  // TOR → NIA (auto)
+  L.polyline([[43.0896, -79.0849], [40.7128, -74.0060]], flightStyle).addTo(map); // NIA/TOR → NY
+
+  function makeIcon(num) {
+    return L.divIcon({
+      className: '',
+      html: `<div style="
+        width:28px;height:28px;border-radius:50%;
+        background:#3A5F7A;color:white;
+        display:flex;align-items:center;justify-content:center;
+        font-size:11px;font-weight:500;
+        font-family:'DM Sans',sans-serif;
+        border:2px solid white;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25);
+      ">${num}</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+  }
+
+  stops.forEach((stop, i) => {
+    L.marker(stop.coords, { icon: makeIcon(i + 1) })
+      .addTo(map)
+      .bindPopup(`
+        <div style="font-family:'DM Sans',sans-serif;padding:4px 2px">
+          <div style="font-weight:500;font-size:14px;margin-bottom:2px">${stop.name}</div>
+          <div style="font-size:11px;color:#8C7B6B;letter-spacing:0.05em">${stop.days} · ${stop.note}</div>
+        </div>
+      `, { closeButton: false });
+  });
+
+  map.fitBounds(L.latLngBounds(stops.map(s => s.coords)), { padding: [50, 50] });
+</script>
+</body>
+</html>
